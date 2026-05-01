@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ogui — Calendario Mayo 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream:#FAF8F3;--warm-white:#FFFDF9;--ink:#1A1714;--ink-light:#5A5550;
+    --ink-muted:#9A9490;--gold:#C9A96E;--gold-light:#F0E4CC;--gold-pale:#FBF5EA;
+    --reel-color:#2D4A3E;--reel-bg:#E8F0ED;--post-color:#3D2E5E;--post-bg:#EDE8F5;
+    --trend-color:#7A3B1E;--trend-bg:#F5E8DF;--border:#E8E2D8;
+    --published-bg:#E8F0ED;--published-color:#2D4A3E;
+    --progress-bg:#FBF5EA;--progress-color:#8A5E1A;
+    --draft-bg:#F0EEF8;--draft-color:#5A4A8A;
+    --ready-bg:#EAF4FF;--ready-color:#1A5A8A;
+    --pending-bg:#F5F5F5;--pending-color:#888;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+  header{background:var(--ink);padding:3rem 4rem 2.5rem;position:relative;overflow:hidden;}
+  header::before{content:'';position:absolute;top:-60px;right:-60px;width:300px;height:300px;border-radius:50%;border:1px solid rgba(201,169,110,0.15);}
+  header::after{content:'';position:absolute;bottom:-80px;left:40%;width:200px;height:200px;border-radius:50%;border:1px solid rgba(201,169,110,0.1);}
+  .header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:2rem;}
+  .brand{font-family:'Playfair Display',serif;font-size:3.5rem;color:#fff;letter-spacing:-0.02em;line-height:1;}
+  .brand span{color:var(--gold);}
+  .header-meta{text-align:right;}
+  .header-meta p{font-size:0.75rem;color:rgba(255,255,255,0.4);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.25rem;}
+  .header-meta strong{font-size:0.85rem;color:rgba(255,255,255,0.7);font-weight:400;}
+  .header-subtitle{margin-top:1.5rem;font-size:0.75rem;color:rgba(255,255,255,0.35);letter-spacing:0.1em;text-transform:uppercase;border-top:1px solid rgba(255,255,255,0.08);padding-top:1.25rem;display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center;}
+  .header-subtitle span{display:flex;align-items:center;gap:0.5rem;}
+  .dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;}
+  .dot-reel{background:#6BBFA0;}.dot-post{background:#A98FD8;}.dot-trend{background:#E0A87A;}
+  .scheme-pill{background:rgba(201,169,110,0.15);color:rgba(255,255,255,0.5);padding:3px 10px;border-radius:20px;font-size:0.68rem;}
+  main{max-width:980px;margin:0 auto;padding:3rem 2rem 5rem;}
+  .status-legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.5rem;}
+  .status-pill{font-size:0.62rem;font-weight:500;padding:4px 12px;border-radius:20px;letter-spacing:0.07em;text-transform:uppercase;}
+  .s-published{background:var(--published-bg);color:var(--published-color);}
+  .s-ready{background:var(--ready-bg);color:var(--ready-color);}
+  .s-progress{background:var(--progress-bg);color:var(--progress-color);}
+  .s-draft{background:var(--draft-bg);color:var(--draft-color);}
+  .s-pending{background:var(--pending-bg);color:var(--pending-color);}
+  .edit-hint{font-size:0.66rem;color:var(--gold);padding:0.5rem 1rem;background:var(--gold-pale);border-radius:8px;border:1px solid var(--gold-light);display:inline-block;margin-bottom:1.5rem;}
+  .edit-hint-wrap{margin-bottom:0.5rem;}
+  .week{margin-bottom:3rem;}
+  .week-header{display:flex;align-items:baseline;gap:1rem;margin-bottom:1rem;}
+  .week-number{font-family:'Playfair Display',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;}
+  .week-title{font-size:0.7rem;color:var(--ink-muted);letter-spacing:0.1em;text-transform:uppercase;}
+  .week-line{flex:1;height:1px;background:var(--border);}
+  .card{background:var(--warm-white);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;display:grid;grid-template-columns:100px 1fr;overflow:hidden;transition:box-shadow 0.2s,transform 0.2s;}
+  .card:hover{box-shadow:0 4px 20px rgba(26,23,20,0.07);transform:translateY(-1px);}
+  .card.is-published{border-left:3px solid #6BBFA0;}
+  .card.is-pending{opacity:0.75;}
+  .card-day{background:var(--gold-pale);border-right:1px solid var(--gold-light);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem 0.5rem;text-align:center;}
+  .day-name{font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:0.25rem;}
+  .day-date{font-family:'Playfair Display',serif;font-size:1.35rem;color:var(--ink);line-height:1;}
+  .day-month{font-size:0.6rem;color:var(--ink-muted);margin-top:0.15rem;letter-spacing:0.08em;text-transform:uppercase;}
+  .card-body{padding:1rem 1.3rem;}
+  .card-top{display:flex;align-items:center;gap:7px;margin-bottom:0.55rem;flex-wrap:wrap;}
+  .badge{font-size:0.58rem;font-weight:500;padding:3px 9px;border-radius:20px;letter-spacing:0.07em;text-transform:uppercase;}
+  .badge-reel{background:var(--reel-bg);color:var(--reel-color);}
+  .badge-post{background:var(--post-bg);color:var(--post-color);}
+  .badge-trend{background:var(--trend-bg);color:var(--trend-color);}
+  .role{font-size:0.58rem;color:var(--ink-muted);padding:3px 9px;border-radius:20px;border:1px solid var(--border);letter-spacing:0.06em;text-transform:uppercase;}
+  .ads-tag{font-size:0.58rem;color:#7A3B1E;background:#FDEEE6;padding:3px 9px;border-radius:20px;font-weight:500;}
+  .status-select{font-size:0.58rem;font-weight:500;padding:3px 9px;border-radius:20px;border:none;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;appearance:none;-webkit-appearance:none;outline:none;margin-left:auto;}
+  .status-select.s-published{background:var(--published-bg);color:var(--published-color);}
+  .status-select.s-ready{background:var(--ready-bg);color:var(--ready-color);}
+  .status-select.s-progress{background:var(--progress-bg);color:var(--progress-color);}
+  .status-select.s-draft{background:var(--draft-bg);color:var(--draft-color);}
+  .status-select.s-pending{background:var(--pending-bg);color:var(--pending-color);}
+  .card-title{font-size:0.92rem;font-weight:500;color:var(--ink);margin-bottom:0.6rem;line-height:1.4;}
+  .card-fields{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 1rem;}
+  .field-label{font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:0.15rem;}
+  .field-value{font-size:0.76rem;color:var(--ink-light);line-height:1.5;font-style:italic;}
+  .field-value.no-italic{font-style:normal;}
+  .trend-note{margin-top:0.6rem;font-size:0.7rem;color:var(--trend-color);background:var(--trend-bg);padding:0.35rem 0.7rem;border-radius:6px;border-left:2px solid var(--gold);}
+  .strategy{margin-top:4rem;padding-top:3rem;border-top:1px solid var(--border);}
+  .strategy-header h2{font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--ink);margin-bottom:0.4rem;}
+  .strategy-header p{font-size:0.82rem;color:var(--ink-muted);margin-bottom:2rem;}
+  .strategy-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:2rem;}
+  .s-card{background:var(--warm-white);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.3rem;}
+  .s-card-label{font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:0.4rem;}
+  .s-card h3{font-size:0.86rem;font-weight:500;color:var(--ink);margin-bottom:0.5rem;line-height:1.4;}
+  .s-card p{font-size:0.76rem;color:var(--ink-light);line-height:1.65;}
+  .ads-section{background:var(--ink);border-radius:12px;padding:1.75rem;margin-top:1rem;}
+  .ads-section h3{font-family:'Playfair Display',serif;font-size:1rem;color:var(--gold);margin-bottom:1rem;}
+  .ads-list{display:flex;flex-direction:column;gap:8px;}
+  .ads-item{display:flex;align-items:flex-start;gap:12px;}
+  .ads-num{font-family:'Playfair Display',serif;font-size:1.1rem;color:rgba(201,169,110,0.4);width:20px;flex-shrink:0;}
+  .ads-text{font-size:0.8rem;color:rgba(255,255,255,0.75);line-height:1.5;}
+  .ads-text strong{color:#fff;font-weight:500;}
+  footer{text-align:center;padding:2rem;font-size:0.7rem;color:var(--ink-muted);letter-spacing:0.08em;}
+  [contenteditable="true"]{outline:none;border-radius:4px;transition:background 0.15s;}
+  [contenteditable="true"]:hover{background:rgba(201,169,110,0.08);}
+  [contenteditable="true"]:focus{background:rgba(201,169,110,0.12);box-shadow:0 0 0 2px rgba(201,169,110,0.3);}
+  @media(max-width:640px){header{padding:2rem 1.5rem;}.brand{font-size:2.5rem;}.card{grid-template-columns:75px 1fr;}.card-fields{grid-template-columns:1fr;}.strategy-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-top">
+    <div><div class="brand">Ogui<span>.</span></div></div>
+    <div class="header-meta"><p>Calendario de contenido</p><strong>Mayo 2026</strong></div>
+  </div>
+  <div class="header-subtitle">
+    <span><span class="dot dot-reel"></span> Reel</span>
+    <span><span class="dot dot-post"></span> Post</span>
+    <span><span class="dot dot-trend"></span> Trend</span>
+    <span class="scheme-pill">Lun = Reel · Mar = Post · Mié = Trend · Jue = Post · Vie = Reel</span>
+  </div>
+</header>
+
+<main>
+  <div class="edit-hint-wrap"><span class="edit-hint">✏️ Clic en cualquier texto para editar · Cambia el status con el selector</span></div>
+  <div class="status-legend">
+    <span class="status-pill s-published">✓ Published</span>
+    <span class="status-pill s-ready">● Ready to publish</span>
+    <span class="status-pill s-progress">◑ In progress</span>
+    <span class="status-pill s-draft">○ Draft</span>
+    <span class="status-pill s-pending">— Pendiente</span>
+  </div>
+
+  <!-- ═══ SEMANA 1 · 1 Mayo ═══ -->
+  <div class="week">
+    <div class="week-header">
+      <span class="week-number">Semana 01</span>
+      <span class="week-title">1 Mayo · Arranque de mes</span>
+      <div class="week-line"></div>
+    </div>
+
+    <!-- Vie 1 — REEL published -->
+    <div class="card is-published">
+      <div class="card-day"><div class="day-name">Viernes</div><div class="day-date">1</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-reel">Reel</span><span class="role">Wake up call</span>
+          <select class="status-select s-published" onchange="this.className='status-select '+this.value">
+            <option value="s-published" selected>✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending">— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">El privilegio silencioso</div>
+        <div class="card-fields">
+          <div><div class="field-label">Hook</div><div class="field-value" contenteditable="true">"Si nunca has tenido una emergencia financiera grave, tengo una pregunta incómoda."</div></div>
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">No es que no te haya pasado nada. Es que alguien o algo te cubrió cuando pasó. Eso no es un plan — es tiempo prestado. Escríbeme PRIVILEGIO si quieres saber en qué punto estás realmente.<br><br>#finanzaspersonales #libertadfinanciera #mujeresemprendedoras #retiroMexico #OguiEnForma</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SEMANA 2 · 4–8 Mayo ═══ -->
+  <div class="week">
+    <div class="week-header">
+      <span class="week-number">Semana 02</span>
+      <span class="week-title">4 – 8 Mayo</span>
+      <div class="week-line"></div>
+    </div>
+
+    <!-- Lun 4 — REEL -->
+    <div class="card">
+      <div class="card-day"><div class="day-name">Lunes</div><div class="day-date">4</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-reel">Reel</span><span class="role">Posicionamiento</span>
+          <select class="status-select s-ready" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready" selected>● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending">— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">El origen: de cerrar el gym a entender el dinero</div>
+        <div class="card-fields">
+          <div><div class="field-label">Hook</div><div class="field-value" contenteditable="true">"En 2020 cerré mi negocio. Eso me enseñó más de dinero que 6 años de universidad."</div></div>
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">No cerré porque fallé. Cerré porque el sistema no protege a los que no tienen un plan. Hoy sé lo que tenía que haber hecho — y te lo comparto. Escríbeme si quieres saber por dónde empezar.<br><br>#finanzaspersonales #libertadfinanciera #mujeresemprendedoras #retiroMexico #OguiEnForma</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mar 5 — POST -->
+    <div class="card">
+      <div class="card-day"><div class="day-name">Martes</div><div class="day-date">5</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-post">Post</span><span class="role">Motivar</span>
+          <select class="status-select s-ready" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready" selected>● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending">— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">No tiene que ser enero — empieza en mayo</div>
+        <div class="card-fields">
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">No tienes que sentirte lista. No tienes que invertir millones. Solo tienes que empezar — aunque sea con $3,000 y con dudas. El mejor momento fue antes. El segundo mejor es hoy. ¿Arrancamos?<br><br>#finanzasparamujeres #independenciafinanciera #mujeresconproposito #educacionfinanciera #OguiEnForma</div></div>
+          <div><div class="field-label">Objetivo</div><div class="field-value no-italic" contenteditable="true">Motivación + saves + DMs</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mié 6 — TREND 1 -->
+    <div class="card">
+      <div class="card-day"><div class="day-name">Miércoles</div><div class="day-date">6</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-reel">Reel</span><span class="badge badge-trend">Trend 1</span><span class="role">Alcance</span>
+          <select class="status-select s-draft" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft" selected>○ Draft</option><option value="s-pending">— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">Trend 1</div>
+        <div class="card-fields">
+          <div><div class="field-label">Idea</div><div class="field-value" contenteditable="true">Adaptar trend de la semana — conectar con el arranque del mes y tomar acción</div></div>
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">Por definir según el trend de la semana</div></div>
+        </div>
+        <div class="trend-note" contenteditable="true">Definir trend según lo que esté sonando esa semana.</div>
+      </div>
+    </div>
+
+    <!-- Jue 7 — POST -->
+    <div class="card">
+      <div class="card-day"><div class="day-name">Jueves</div><div class="day-date">7</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-post">Post</span><span class="role">Urgencia</span>
+          <select class="status-select s-draft" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft" selected>○ Draft</option><option value="s-pending">— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">4 de cada 10 millennials podrían vivir su vejez en pobreza</div>
+        <div class="card-fields">
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">No es por no trabajar. Es porque nadie nos enseñó cómo ahorrar bien, invertir o planear el retiro. Si no haces nada hoy, tu retiro va a depender de tus hijos, el gobierno o la suerte. Escríbeme y te explico cómo hacerlo bien.<br><br>#planderetiro #SGMM #retiroMexico #finanzaspersonales #OguiEnForma</div></div>
+          <div><div class="field-label">Objetivo</div><div class="field-value no-italic" contenteditable="true">Urgencia + saves + DMs</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vie 8 — REEL -->
+    <div class="card">
+      <div class="card-day"><div class="day-name">Viernes</div><div class="day-date">8</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-reel">Reel</span><span class="role">Conversión</span><span class="ads-tag">⭐ Ads</span>
+          <select class="status-select s-draft" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft" selected>○ Draft</option><option value="s-pending">— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">¿Tienes GMM del trabajo? Esto no te lo dijeron</div>
+        <div class="card-fields">
+          <div><div class="field-label">Hook</div><div class="field-value" contenteditable="true">"Tienes seguro de gastos médicos del trabajo. Perfecto. ¿Sabes qué pasa si renuncias mañana?"</div></div>
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">Tu seguro del trabajo es bueno. Pero es de ellos, no tuyo. Si renuncias, te corren o la empresa cierra — se va contigo. Escríbeme GMM y en 20 minutos revisamos si tienes un plan propio como respaldo.<br><br>#planderetiro #SGMM #retiroMexico #finanzaspersonales #OguiEnForma</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SEMANA 3 · 11–15 Mayo ═══ -->
+  <div class="week">
+    <div class="week-header">
+      <span class="week-number">Semana 03</span>
+      <span class="week-title">11 – 15 Mayo</span>
+      <div class="week-line"></div>
+    </div>
+
+    <!-- Lun 11 — REEL -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Lunes</div><div class="day-date">11</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-reel">Reel</span><span class="role">Alto engagement</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">La conversación de pareja que nadie tiene</div>
+        <div class="card-fields">
+          <div><div class="field-label">Hook</div><div class="field-value" contenteditable="true">"Hay una conversación que el 90% de las parejas nunca tienen. Y cuesta carísimo."</div></div>
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">No es infidelidad. No es dinero escondido. Es no tener un plan financiero propio, individual, que no dependa de la otra persona. Doce años juntos. Nunca lo habían hablado. Mándaselo a tu pareja — es hora de tener esa conversación.<br><br>#finanzasparamujeres #independenciafinanciera #mujeresconproposito #educacionfinanciera #OguiEnForma</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mar 12 — POST -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Martes</div><div class="day-date">12</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-post">Post</span><span class="role">Conectar</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">Creencias limitantes que nos frenan con el dinero</div>
+        <div class="card-fields">
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">"Soy mala con el dinero." No naciste así — nunca te enseñaron. "Después lo hago." El tiempo es lo más importante cuando se trata de dinero. Y no vuelve. Tu dinero es poder. Y no usarlo también es una decisión. ¿Con cuál te identificas más?<br><br>#finanzasparamujeres #independenciafinanciera #mujeresconproposito #educacionfinanciera #OguiEnForma</div></div>
+          <div><div class="field-label">Objetivo</div><div class="field-value no-italic" contenteditable="true">Identificación + comentarios + saves</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mié 13 — TREND 2 -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Miércoles</div><div class="day-date">13</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-reel">Reel</span><span class="badge badge-trend">Trend 2</span><span class="role">Alcance</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">Trend 2</div>
+        <div class="card-fields">
+          <div><div class="field-label">Idea</div><div class="field-value" contenteditable="true">Adaptar trend — romper creencias o mostrar el contraste entre pensar y actuar con el dinero</div></div>
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">Por definir según el trend de la semana</div></div>
+        </div>
+        <div class="trend-note" contenteditable="true">Conecta con el post del martes — refuerza el tema de creencias y amplía el alcance.</div>
+      </div>
+    </div>
+
+    <!-- Jue 14 — POST -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Jueves</div><div class="day-date">14</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-post">Post</span><span class="role">Bienestar + finanzas</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">¿Te parece caro comer saludable? Espera a pagar consultas médicas</div>
+        <div class="card-fields">
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">No es disciplina lo que falta. Es conciencia de consecuencias. Lo mismo pasa con tu dinero — no verlo hoy no lo hace desaparecer. Solo te deja sin control. ¿Con cuál de estas te identificas? Cuéntame abajo.<br><br>#bienestarfinanciero #saludfinanciera #mujeresconproposito #finanzasparamujeres #OguiEnForma</div></div>
+          <div><div class="field-label">Objetivo</div><div class="field-value no-italic" contenteditable="true">Comentarios + conexión fit + finanzas</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vie 15 — REEL -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Viernes</div><div class="day-date">15</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-reel">Reel</span><span class="role">Conversión</span><span class="ads-tag">⭐ Ads</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">Antes de tu próximo cumpleaños</div>
+        <div class="card-fields">
+          <div><div class="field-label">Hook</div><div class="field-value" contenteditable="true">"Si este año cumples 30, 35 o 40 — este video tiene números para ti."</div></div>
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">Cada cumpleaños que pasa sin un plan, el número que necesitas se hace más grande. Con 30: más de 2 millones al retiro. Con 35: millón y medio. Con 40: todavía es posible, pero ya no hay margen. Mándame tu edad al DM — te mando tu proyección ese mismo día, sin costo.<br><br>#planderetiro #SGMM #retiroMexico #finanzaspersonales #OguiEnForma</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SEMANA 4 · 18–22 Mayo ═══ -->
+  <div class="week">
+    <div class="week-header">
+      <span class="week-number">Semana 04</span>
+      <span class="week-title">18 – 22 Mayo</span>
+      <div class="week-line"></div>
+    </div>
+
+    <!-- Lun 18 — REEL -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Lunes</div><div class="day-date">18</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-reel">Reel</span><span class="role">Conversión</span><span class="ads-tag">⭐ Ads</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">El calculador en video</div>
+        <div class="card-fields">
+          <div><div class="field-label">Hook</div><div class="field-value" contenteditable="true">"Dime tu edad y cuánto puedes apartar al mes. En 60 segundos te digo a dónde llegas."</div></div>
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">35 años + $1,500/mes = aprox. 3 millones al retiro. 40 años + $3,000/mes = casi 4 millones en 25 años. Siempre gana quien empieza antes. Escríbeme tu edad y cuánto puedes apartar — te mando tu proyección ese mismo día, sin costo, sin compromiso.<br><br>#planderetiro #SGMM #retiroMexico #finanzaspersonales #OguiEnForma</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mar 19 — POST -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Martes</div><div class="day-date">19</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-post">Post</span><span class="role">Educar</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">Toda mujer debería automatizar estas cosas</div>
+        <div class="card-fields">
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">Inversiones, ahorros, pagos, deudas y retiro — todo en automático. No porque seas disciplinada. Sino para no depender de acordarte. Automatizar tu dinero es construir independencia en automático. Guarda esto.<br><br>#bienestarfinanciero #saludfinanciera #mujeresconproposito #finanzasparamujeres #OguiEnForma</div></div>
+          <div><div class="field-label">Objetivo</div><div class="field-value no-italic" contenteditable="true">Saves masivos + educación</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mié 20 — TREND 3 -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Miércoles</div><div class="day-date">20</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-reel">Reel</span><span class="badge badge-trend">Trend 3</span><span class="role">Alcance</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">Trend 3</div>
+        <div class="card-fields">
+          <div><div class="field-label">Idea</div><div class="field-value" contenteditable="true">Adaptar trend — interés compuesto o automatización financiera</div></div>
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">Por definir según el trend de la semana</div></div>
+        </div>
+        <div class="trend-note" contenteditable="true">Conecta con el post del martes sobre automatización.</div>
+      </div>
+    </div>
+
+    <!-- Jue 21 — POST -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Jueves</div><div class="day-date">21</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-post">Post</span><span class="role">Educar</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">Las mujeres con mejor estabilidad financiera no son más inteligentes — solo empezaron antes</div>
+        <div class="card-fields">
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">El interés compuesto: tu dinero genera dinero, que genera más dinero, que no se detiene. Misma cantidad, mismo esfuerzo — resultado completamente diferente según cuándo empezaste. ¿Cuándo vas a empezar tú?<br><br>#finanzasparamujeres #independenciafinanciera #mujeresconproposito #educacionfinanciera #OguiEnForma</div></div>
+          <div><div class="field-label">Objetivo</div><div class="field-value no-italic" contenteditable="true">Educación + saves + urgencia</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vie 22 — REEL -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Viernes</div><div class="day-date">22</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-reel">Reel</span><span class="role">Conversión</span><span class="ads-tag">⭐ Ads</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">La clienta que llamó llorando</div>
+        <div class="card-fields">
+          <div><div class="field-label">Hook</div><div class="field-value" contenteditable="true">"Una clienta me llamó llorando. No porque algo malo pasó. Por lo contrario."</div></div>
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">Hospitalización de 8 días. UCI. Cirugía. $380,000 pesos en gastos. Lo que ella pagó: $15,000. El deducible. Me escribió llorando de alivio. Un buen seguro no te quita el susto — te quita el peso económico encima del susto. ¿Tú tienes esa tranquilidad? Escríbeme HISTORIA y lo revisamos.<br><br>#planderetiro #SGMM #retiroMexico #finanzaspersonales #OguiEnForma</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SEMANA 5 · 25–29 Mayo ═══ -->
+  <div class="week">
+    <div class="week-header">
+      <span class="week-number">Semana 05</span>
+      <span class="week-title">25 – 29 Mayo · Cierre de mes</span>
+      <div class="week-line"></div>
+    </div>
+
+    <!-- Lun 25 — REEL pendiente -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Lunes</div><div class="day-date">25</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-reel">Reel</span><span class="role">Pendiente</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">Contenido pendiente — Batch 3</div>
+        <div class="card-fields">
+          <div><div class="field-label">Idea</div><div class="field-value" contenteditable="true">Por definir con el siguiente batch de scripts</div></div>
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">Por escribir</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mar 26 — POST caso 1 -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Martes</div><div class="day-date">26</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-post">Post</span><span class="role">Caso simulado</span><span class="ads-tag">⭐ Ads</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">Caso simulado: 25 años · Sueldo $15,000 · Solo Afore vs. Afore + PPR</div>
+        <div class="card-fields">
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">Solo Afore: $6,500 mensuales al retiro. Afore + PPR con $1,500 al mes: hasta $25,000 mensuales. Mismo sueldo. La diferencia es la estrategia. ¿Ya sabes en qué escenario estás tú? Escríbeme y lo calculamos juntas.<br><br>#planderetiro #SGMM #retiroMexico #finanzaspersonales #OguiEnForma</div></div>
+          <div><div class="field-label">Objetivo</div><div class="field-value no-italic" contenteditable="true">Conversión + DMs + claridad</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mié 27 — TREND 4 -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Miércoles</div><div class="day-date">27</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-reel">Reel</span><span class="badge badge-trend">Trend 4</span><span class="role">Alcance</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">Trend 4</div>
+        <div class="card-fields">
+          <div><div class="field-label">Idea</div><div class="field-value" contenteditable="true">Trend de cierre de mes — tono aspiracional o de transformación financiera</div></div>
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">Por definir según el trend de la semana</div></div>
+        </div>
+        <div class="trend-note" contenteditable="true">Cierre de mes — elegir trend con energía de acción o aspiracional.</div>
+      </div>
+    </div>
+
+    <!-- Jue 28 — POST caso 2 -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Jueves</div><div class="day-date">28</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-post">Post</span><span class="role">Caso simulado</span><span class="ads-tag">⭐ Ads</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">Caso simulado: 32 años · Emprendedora · Ingresos variables</div>
+        <div class="card-fields">
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">Sin estrategia: $0 asegurado al retiro — depende de lo que ahorres sola. Con PPR + $3,000/mes: entre $4M y $6M acumulados. Como emprendedora, nadie te va a dar un fondo. Pero sí puedes construirlo tú. Escríbeme y empezamos.<br><br>#planderetiro #SGMM #retiroMexico #finanzaspersonales #OguiEnForma</div></div>
+          <div><div class="field-label">Objetivo</div><div class="field-value no-italic" contenteditable="true">Conversión emprendedoras + DMs</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vie 29 — REEL -->
+    <div class="card is-pending">
+      <div class="card-day"><div class="day-name">Viernes</div><div class="day-date">29</div><div class="day-month">Mayo</div></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="badge badge-reel">Reel</span><span class="role">Pendiente</span>
+          <select class="status-select s-pending" onchange="this.className='status-select '+this.value">
+            <option value="s-published">✓ Published</option><option value="s-ready">● Ready</option><option value="s-progress">◑ In progress</option><option value="s-draft">○ Draft</option><option value="s-pending" selected>— Pendiente</option>
+          </select>
+        </div>
+        <div class="card-title" contenteditable="true">Contenido pendiente — Batch 3</div>
+        <div class="card-fields">
+          <div><div class="field-label">Idea</div><div class="field-value" contenteditable="true">Por definir con el siguiente batch de scripts</div></div>
+          <div><div class="field-label">Caption</div><div class="field-value" contenteditable="true">Por escribir</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRATEGY -->
+  <div class="strategy">
+    <div class="strategy-header">
+      <h2>Estrategia de Mayo</h2>
+      <p contenteditable="true">El mes abre con posicionamiento personal fuerte, construye confianza con educación y conexión emocional, y cierra con los casos simulados que convierten directamente.</p>
+    </div>
+    <div class="strategy-grid">
+      <div class="s-card">
+        <div class="s-card-label">Semanas 1–2 — Arranque</div>
+        <h3 contenteditable="true">Posicionamiento + primer golpe de conversión</h3>
+        <p contenteditable="true">El privilegio silencioso abre el mes con incomodidad inteligente. El origen el lunes 4 construye la historia personal de Ogui. El viernes 8 con GMM ataca la objeción más común desde el inicio — perfecto para ads en audiencia fría.</p>
+      </div>
+      <div class="s-card">
+        <div class="s-card-label">Semana 3 — Conexión</div>
+        <h3 contenteditable="true">Pareja, creencias y bienestar</h3>
+        <p contenteditable="true">La conversación de pareja el lunes genera shares masivos — las mujeres lo mandan a sus parejas. Las creencias el martes generan identificación alta. El viernes de cumpleaños es el reel más segmentable para ads en Meta por rango de edad.</p>
+      </div>
+      <div class="s-card">
+        <div class="s-card-label">Semana 4 — Conversión directa</div>
+        <h3 contenteditable="true">Calculador, automatización y testimonial</h3>
+        <p contenteditable="true">El calculador en video el lunes convierte porque el espectador hace los números mentalmente. La automatización y el interés compuesto educan con saves altos. La clienta llorando el viernes es el testimonial más poderoso para retargeting.</p>
+      </div>
+      <div class="s-card">
+        <div class="s-card-label">Semana 5 — Cierre de mes</div>
+        <h3 contenteditable="true">Casos simulados — el contenido más cercano a una asesoría real</h3>
+        <p contenteditable="true">Los casos simulados van al final porque para entonces la audiencia ya confía. Son el contenido con mayor potencial de conversión directa — muestran números reales, escenarios reales y hacen que el lector se vea reflejado.</p>
+      </div>
+    </div>
+    <div class="ads-section">
+      <h3>Contenido con potencial para escalar a Ads</h3>
+      <div class="ads-list">
+        <div class="ads-item"><div class="ads-num">1</div><div class="ads-text"><strong>¿Tienes GMM del trabajo?</strong> — Audiencia fría. Resuelve una creencia sin vender. Alto potencial de alcance orgánico y pagado.</div></div>
+        <div class="ads-item"><div class="ads-num">2</div><div class="ads-text"><strong>Antes de tu próximo cumpleaños</strong> — Segmentar por edad en Meta. Personalización sin datos. El hook por sí solo detiene el scroll.</div></div>
+        <div class="ads-item"><div class="ads-num">3</div><div class="ads-text"><strong>La clienta que llamó llorando</strong> — Retargeting. Testimonial real con números concretos. Convierte leads tibios que ya conocen a Ogui.</div></div>
+        <div class="ads-item"><div class="ads-num">4</div><div class="ads-text"><strong>Casos simulados (Post 1 y 2)</strong> — Retargeting con números reales. Antes y después visual y directo. Ideal para cerrar el mes con conversiones concretas.</div></div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer>Ogui · Calendario estratégico de contenido · Mayo 2026</footer>
+</body>
+</html>
